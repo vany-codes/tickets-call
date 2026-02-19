@@ -14,6 +14,10 @@
 
 - nodemon
 
+## Descripción
+
+Esta aplicación proporciona una API RESTful para gestionar tickets. Permite crear, leer, actualizar y eliminar tickets en una base de datos PostgreSQL.
+
 # 🚀 Instalación del Proyecto
 ## 1️⃣ Crear proyecto
 
@@ -27,6 +31,14 @@ npm init -y
 npm install express cors dotenv pg
 npm install --save-dev nodemon
 
+```
+
+## 3️⃣ Configura las variables de entorno
+
+Crea un archivo `.env` en la raíz del proyecto con las siguientes variables:
+```
+DATABASE_URL=postgresql://usuario:contraseña@localhost:5432/nombre_base_datos
+PORT=3000
 ```
 
 # 3️⃣ Crear base de datos
@@ -43,19 +55,52 @@ CREATE TABLE tickets (
 );
 ```
 
-# 📡 Endpoints creados
-- GET /tickets
+## Uso
 
-- Obtiene todos los tickets.
+Para ejecutar el servidor en modo desarrollo:
+```
+npm run dev
+```
 
-- POST /tickets
+El servidor se ejecutará en `http://localhost:3000`.
 
-- Crea un nuevo ticket.
+## Endpoints de la API
 
-- PUT /tickets/:id
+### GET /tickets
+Obtiene todos los tickets.
 
-- Actualiza el estado de un ticket.
+### POST /tickets
+Crea un nuevo ticket. Requiere un body JSON con `title` y `description`.
 
-- DELETE /tickets/:id
+Ejemplo:
+```json
+{
+  "title": "Nuevo ticket",
+  "description": "Descripción del ticket"
+}
+```
 
-- Elimina un ticket.
+### PUT /tickets/:id
+Actualiza el estado de un ticket. Requiere un body JSON con `status`.
+
+Ejemplo:
+```json
+{
+  "status": "closed"
+}
+```
+
+### DELETE /tickets/id
+Elimina un ticket por su ID.
+
+## Dependencias
+
+- Express: Framework web para Node.js
+- pg: Cliente PostgreSQL para Node.js
+- cors: Middleware para habilitar CORS
+- dotenv: Carga variables de entorno desde un archivo .env
+- nodemon: Herramienta para reiniciar automáticamente el servidor durante el desarrollo
+
+## Licencia
+
+ISC
