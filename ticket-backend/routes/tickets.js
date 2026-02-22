@@ -8,7 +8,9 @@ const {
   deleteTicket,
 } = require("../controllers/ticketsController"); // importa las funciones del controlador de tickets para manejar las solicitudes
 
-const { validateId } = require("../middleware/validateId"); // importa el middleware para validar el ID de los tickets
+const validateId = require("../middleware/validateid"); // importa el middleware para validar el ID de los tickets
+
+console.log(updateTicket);
 
 router.get("/", getTickets); // ruta para obtener todos los tickets
 router.post("/", createTicket); // ruta para crear un nuevo ticket

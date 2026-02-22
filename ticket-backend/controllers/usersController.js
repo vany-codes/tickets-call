@@ -1,5 +1,8 @@
 const pool = require("../db"); // importa la conexión a la base de datos desde el archivo correspondiente
 
+const jwt = require("jsonwebtoken"); // importa jsonwebtoken para la generación de tokens de autenticación (aunque no se está utilizando en este código, es recomendable para la seguridad de las sesiones)
+const bcrypt = require("bcrypt"); // importa bcrypt para el hashing de contraseñas (aunque no se está utilizando en este código, es recomendable para la seguridad de las contraseñas)
+
 // GET all users
 const getUsers = async (req, res) => {
   try {
@@ -22,9 +25,12 @@ const createUser = async (req, res) => {
             error: "Name, email and password are required",
         });
         }
+
+        const hashedPassword = await bcrypt.hash(pass, 10); // hash de la contraseña con un salt de 10 rondas
+        
         const result = await pool.query(
         "INSERT INTO users (name, email, pass) VALUES ($1, $2, $3) RETURNING *",
-        [name, email, pass]
+        [name, email, hashedPassword]
     );
 
     res.status(201).json(result.rows[0]); // envía el usuario creado como respuesta en formato JSON con un código de estado 201 (Created)
@@ -60,15 +66,25 @@ const userLogin = async (req, res) => {
     const { email, pass } = req.body;
 
     const result = await pool.query(
-      "SELECT * FROM users WHERE email = $1 AND pass = $2",
-      [email, pass]
+      "SELECT * FROM users WHERE email = $1",
+      [email]
     );
 
     if (result.rows.length === 0) {
-      return res.status(401).json({ error: "Invalid email or password" });
+      return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    res.json({ message: "Login successful", user: result.rows[0] }); // envía un mensaje de éxito y el usuario autenticado como respuesta en formato JSON
+    const user = result.rows[0];
+
+    const isMatch = await bcrypt.compare(pass, user.pass); // compara la contraseña proporcionada con el hash almacenado en la base de datos
+
+    if (!isMatch) {
+      return res.status(401).json({ error: "Invalid credentials" });
+    }
+
+    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" }); // genera un token JWT con el ID del usuario y una clave secreta, con una expiración de 1 hora
+
+    res.json({ message: "Login successful", token }); // envía un mensaje de éxito y el usuario autenticado como respuesta en formato JSON
   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).json({ error: "Internal server error" });
