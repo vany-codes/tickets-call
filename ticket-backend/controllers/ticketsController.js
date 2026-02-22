@@ -24,12 +24,16 @@ const createTicket = async (req, res) => {
       });
     }
 
+    // 🔥 Tomamos el user_id del token
+    const userId = req.user.id;
+
     const result = await pool.query(
-      "INSERT INTO tickets (title, description, status) VALUES ($1, $2, $3) RETURNING *",
-      [title, description, status]
+      "INSERT INTO tickets (title, description, status, user_id) VALUES ($1, $2, $3, $4) RETURNING *",
+      [title, description, status || "abierto", userId]
     );
 
     res.status(201).json(result.rows[0]);
+
   } catch (error) {
     console.error("Error creating ticket:", error);
     res.status(500).json({ error: "Internal server error" });
