@@ -1,4 +1,4 @@
-const pool = require("../db");
+const pool = require("../db"); // importa la conexión a la base de datos desde el archivo correspondiente
 
 // GET all tickets
 const getTickets = async (req, res) => {
