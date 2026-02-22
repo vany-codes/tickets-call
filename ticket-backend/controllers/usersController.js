@@ -21,21 +21,23 @@ const createUser = async (req, res) => {
     const { name, email, pass } = req.body;
 
     if (!name || !email || !pass) {
-        return res.status(400).json({
-            error: "Name, email and password are required",
-        });
-        }
+      return res.status(400).json({
+        error: "Name, email and password are required",
+      });
+    }
 
-        const hashedPassword = await bcrypt.hash(pass, 10); // hash de la contraseña con un salt de 10 rondas
-        
-        const result = await pool.query(
-        "INSERT INTO users (name, email, pass) VALUES ($1, $2, $3) RETURNING *",
-        [name, email, hashedPassword]
+    // 🔐 Hashear contraseña
+    const saltRounds = 10; // número de rondas de sal para el hashing de la contraseña, lo que aumenta la seguridad al hacer que el proceso de hashing sea más lento y resistente a ataques
+    const hashedPassword = await bcrypt.hash(pass, saltRounds); // genera un hash de la contraseña utilizando bcrypt, lo que mejora la seguridad al almacenar contraseñas en la base de datos, ya que el hash es irreversible y protege contra ataques de fuerza bruta
+
+    const result = await pool.query(
+      "INSERT INTO users (name, email, pass) VALUES ($1, $2, $3) RETURNING id, name, email, created_at",
+      [name, email, hashedPassword] // inserta un nuevo usuario en la base de datos con el nombre, correo electrónico y contraseña hasheada, y devuelve el ID, nombre, correo electrónico y fecha de creación del nuevo usuario como respuesta en formato JSON
     );
 
-    res.status(201).json(result.rows[0]); // envía el usuario creado como respuesta en formato JSON con un código de estado 201 (Created)
+    res.status(201).json(result.rows[0]); // envía el nuevo usuario creado como respuesta en formato JSON con un código de estado 201 (Created)
   } catch (error) {
-    console.error("Error creating user:", error);
+    console.error("Error creating user:", error); // maneja cualquier error que ocurra durante la creación del usuario y envía una respuesta de error con un código de estado 500 (Internal Server Error)
     res.status(500).json({ error: "Internal server error" });
   }
 };
@@ -74,17 +76,24 @@ const userLogin = async (req, res) => {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const user = result.rows[0];
+    const user = result.rows[0]; // obtiene el usuario de la base de datos que coincide con el correo electrónico proporcionado en la solicitud de inicio de sesión
 
-    const isMatch = await bcrypt.compare(pass, user.pass); // compara la contraseña proporcionada con el hash almacenado en la base de datos
+    // 🔐 Comparar contraseña
+    const isMatch = await bcrypt.compare(pass, user.pass); // compara la contraseña proporcionada en la solicitud de inicio de sesión con la contraseña hasheada almacenada en la base de datos utilizando bcrypt, lo que mejora la seguridad al verificar las credenciales del usuario sin exponer la contraseña original
 
     if (!isMatch) {
       return res.status(401).json({ error: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ id: user.id }, process.env.JWT_SECRET, { expiresIn: "1h" }); // genera un token JWT con el ID del usuario y una clave secreta, con una expiración de 1 hora
+    // 🎟 Generar token
+    const token = jwt.sign(
+      { id: user.id, email: user.email },
+      process.env.JWT_SECRET,
+      { expiresIn: "1h" } // genera un token de autenticación utilizando jsonwebtoken, que incluye el ID y correo electrónico del usuario como payload, y se firma con una clave secreta definida en las variables de entorno, con una expiración de 1 hora para mejorar la seguridad de la sesión del usuario
+    );
 
-    res.json({ message: "Login successful", token }); // envía un mensaje de éxito y el usuario autenticado como respuesta en formato JSON
+    res.json({ message: "Login successful", token }); // envía un mensaje de éxito y el token de autenticación como respuesta en formato JSON, lo que permite al cliente utilizar el token para acceder a rutas protegidas en futuras solicitudes
+
   } catch (error) {
     console.error("Error during login:", error);
     res.status(500).json({ error: "Internal server error" });

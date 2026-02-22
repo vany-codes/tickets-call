@@ -8,3 +8,19 @@ const pool = new Pool({
 });
 
 module.exports = pool; // Exporta el pool de conexiones para ser utilizado en otros archivos
+
+/*API REST con:
+
+Auth
+
+Hashing
+
+JWT
+
+Foreign Keys
+
+Middleware
+
+Arquitectura separada
+
+Eso ya se pone en CV.*/
